@@ -2,6 +2,7 @@ package imgsrc
 
 import (
 	"archive/tar"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -26,6 +27,28 @@ func archiveDirectory(options archiveOptions) (io.ReadCloser, error) {
 	if options.compressed && len(options.additions) == 0 {
 		opts.Compression = archive.Gzip
 	}
+
+	tmp, err := archive.TarWithOptions(options.sourcePath, opts)
+	if err != nil {
+		return nil, err
+	}
+	tr := tar.NewReader(tmp)
+	var size int64 = 0
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		size += hdr.Size
+	}
+	err = tmp.Close()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Your build context is %s\n\n", ReadableBytes(size))
 
 	r, err := archive.TarWithOptions(options.sourcePath, opts)
 	if err != nil {
@@ -99,4 +122,18 @@ func isPathInRoot(target, rootDir string) bool {
 		return false
 	}
 	return !strings.HasPrefix(filepath.ToSlash(rel), "../")
+}
+
+func ReadableBytes(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
 }
