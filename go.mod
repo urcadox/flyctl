@@ -72,6 +72,7 @@ require (
 	github.com/google/btree v1.0.1 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/vektah/gqlparser v1.3.1 // indirect
 	github.com/vektah/gqlparser/v2 v2.4.5 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/tools v0.1.10 // indirect

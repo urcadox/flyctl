@@ -10,6 +10,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/spf13/cobra"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/superfly/flyctl/iostreams"
 	"github.com/superfly/graphql"
@@ -33,6 +34,8 @@ func Run(ctx context.Context, io *iostreams.IOStreams, args ...string) int {
 
 	cs := io.ColorScheme()
 
+	var errList *gqlerror.List
+
 	switch _, err := cmd.ExecuteContextC(ctx); {
 	case err == nil:
 		return 0
@@ -42,6 +45,12 @@ func Run(ctx context.Context, io *iostreams.IOStreams, args ...string) int {
 		printError(io.ErrOut, cs, err)
 
 		return 126
+	// Error type from Khan/genqlient
+	case errors.As(err, &errList):
+		for _, err := range *errList {
+			fmt.Printf("%v at %v\n", err.Message, err.Path)
+		}
+		return 1
 	case isUnchangedError(err):
 		// This means the deployment was a noop, which is noteworthy but not something we should
 		// fail CI on. Print a warning and exit 0. Remove this once we're fully on Machines!
