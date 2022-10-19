@@ -7,14 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 
 	"github.com/samber/lo"
 
-	"github.com/superfly/flyctl/agent"
 	"github.com/superfly/flyctl/api"
-	"github.com/superfly/flyctl/client"
 	"github.com/superfly/flyctl/flyctl"
 	"github.com/superfly/flyctl/internal/logger"
 )
@@ -23,7 +20,6 @@ var NonceHeader = "fly-machine-lease-nonce"
 
 type Client struct {
 	app        *api.AppCompact
-	peerIP     string
 	authToken  string
 	httpClient *http.Client
 }
@@ -31,31 +27,13 @@ type Client struct {
 func New(ctx context.Context, app *api.AppCompact) (*Client, error) {
 	logger := logger.MaybeFromContext(ctx)
 
-	client := client.FromContext(ctx).API()
-	agentclient, err := agent.Establish(ctx, client)
-	if err != nil {
-		return nil, fmt.Errorf("error establishing agent: %w", err)
-	}
-
-	dialer, err := agentclient.Dialer(ctx, app.Organization.Slug)
-	if err != nil {
-		return nil, fmt.Errorf("flaps: can't build tunnel for %s: %w", app.Organization.Slug, err)
-	}
-
-	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return dialer.DialContext(ctx, network, addr)
-		},
-	}
-
-	httpClient, err := api.NewHTTPClient(logger, transport)
+	httpClient, err := api.NewHTTPClient(logger, http.DefaultTransport)
 	if err != nil {
 		return nil, fmt.Errorf("flaps: can't setup HTTP client for %s: %w", app.Organization.Slug, err)
 	}
 
 	return &Client{
 		app:        app,
-		peerIP:     resolvePeerIP(dialer.State().Peer.Peerip),
 		authToken:  flyctl.GetAPIToken(),
 		httpClient: httpClient,
 	}, nil
@@ -303,15 +281,14 @@ func (f *Client) sendRequest(ctx context.Context, method, endpoint string, in, o
 
 func (f *Client) NewRequest(ctx context.Context, method, path string, in interface{}, headers map[string][]string) (*http.Request, error) {
 	var (
-		body   io.Reader
-		peerIP = f.peerIP
+		body io.Reader
 	)
 
 	if headers == nil {
 		headers = make(map[string][]string)
 	}
 
-	targetEndpoint := fmt.Sprintf("http://[%s]:4280/v1/apps/%s/machines%s", peerIP, f.app.Name, path)
+	targetEndpoint := fmt.Sprintf("https://api.machines.dev/v1/apps/%s/machines%s", f.app.Name, path)
 
 	if in != nil {
 		b, err := json.Marshal(in)
@@ -352,13 +329,4 @@ func handleAPIError(resp *http.Response) error {
 	default:
 		return errors.New("something went terribly wrong")
 	}
-}
-
-func resolvePeerIP(ip string) string {
-	peerIP := net.ParseIP(ip)
-	var natsIPBytes [16]byte
-	copy(natsIPBytes[0:], peerIP[0:6])
-	natsIPBytes[15] = 3
-
-	return net.IP(natsIPBytes[:]).String()
 }
