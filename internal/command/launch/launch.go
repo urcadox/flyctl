@@ -690,7 +690,7 @@ func determineDockerIgnore(ctx context.Context, workingDir string) (err error) {
 
 		if flag.GetBool(ctx, "dockerignore-from-gitignore") {
 			createDockerignoreFromGitignore = true
-		} else {
+		} else if !flag.GetBool(ctx, "now") {
 			confirm, err := prompt.Confirm(ctx, fmt.Sprintf("Create %s from %d %s files?", dockerIgnore, len(allGitIgnores), gitIgnore))
 			if confirm && err == nil {
 				createDockerignoreFromGitignore = true
