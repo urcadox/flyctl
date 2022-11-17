@@ -11,19 +11,58 @@ import (
 	"github.com/superfly/flyctl/client"
 	"github.com/superfly/flyctl/flaps"
 	"github.com/superfly/flyctl/internal/app"
-	"github.com/superfly/flyctl/internal/build/imgsrc"
+	"github.com/superfly/flyctl/internal/flag"
+	"github.com/superfly/flyctl/internal/prompt"
 	"github.com/superfly/flyctl/internal/spinner"
 	"github.com/superfly/flyctl/iostreams"
 )
 
 // Deploy ta machines app directly from flyctl, applying the desired config to running machines,
 // or launching new ones
-func createMachinesRelease(ctx context.Context, config *app.Config, img *imgsrc.DeploymentImage, strategy string) (err error) {
-	client := client.FromContext(ctx).API()
+func DeployMachinesWithConfig(ctx context.Context, config *app.Config) (err error) {
+	var (
+		client = client.FromContext(ctx).API()
+
+		strategy    = flag.GetString(ctx, "strategy")
+		autoConfirm = flag.GetBool(ctx, "auto-confirm")
+	)
 
 	app, err := client.GetAppCompact(ctx, config.AppName)
 	if err != nil {
-		return
+		return fmt.Errorf("could not get app: %w", err)
+	}
+
+	// Fetch an image ref or build from source to get the final image reference to deploy
+	img, err := determineImage(ctx, config)
+	if err != nil {
+		return fmt.Errorf("failed to fetch an image or build from source: %w", err)
+	}
+
+	// Assign an empty map if nil so later assignments won't fail
+	if config.Env == nil {
+		config.Env = map[string]string{}
+	}
+
+	if flag.GetBuildOnly(ctx) {
+		return nil
+	}
+
+	if !autoConfirm {
+		switch confirmed, err := prompt.Confirmf(ctx, "This feature is highly experimental and may produce unexpected results. Proceed?"); {
+		case err == nil:
+			if !confirmed {
+				return nil
+			}
+		case prompt.IsNonInteractive(err):
+			return prompt.NonInteractiveError("auto-confirm flag must be specified when not running interactively")
+		default:
+			return err
+		}
+	}
+
+	// Ensure primary region has been set.
+	if config.PrimaryRegion != "" && config.Env["PRIMARY_REGION"] == "" {
+		config.Env["PRIMARY_REGION"] = config.PrimaryRegion
 	}
 
 	machineConfig := api.MachineConfig{
@@ -90,19 +129,21 @@ func createMachinesRelease(ctx context.Context, config *app.Config, img *imgsrc.
 		return err
 	}
 
-	if err := RunReleaseCommand(ctx, app, config, machineConfig); err != nil {
+	if err := runMachineRelease(ctx, app, config, machineConfig); err != nil {
 		return fmt.Errorf("release command failed - aborting deployment. %w", err)
 	}
 
 	return DeployMachinesApp(ctx, app, strategy, machineConfig, config)
 }
 
-func RunReleaseCommand(ctx context.Context, app *api.AppCompact, appConfig *app.Config, machineConfig api.MachineConfig) (err error) {
+func runMachineRelease(ctx context.Context, app *api.AppCompact, appConfig *app.Config, machineConfig api.MachineConfig) (err error) {
+	var (
+		io = iostreams.FromContext(ctx)
+	)
+
 	if appConfig.Deploy == nil || appConfig.Deploy.ReleaseCommand == "" {
 		return nil
 	}
-
-	io := iostreams.FromContext(ctx)
 
 	flapsClient, err := flaps.New(ctx, app)
 

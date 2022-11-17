@@ -10,22 +10,18 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 
-	"github.com/superfly/flyctl/iostreams"
-
 	"github.com/superfly/flyctl/api"
+	"github.com/superfly/flyctl/client"
 	"github.com/superfly/flyctl/internal/app"
 	"github.com/superfly/flyctl/internal/build/imgsrc"
+	"github.com/superfly/flyctl/internal/cmdutil"
 	"github.com/superfly/flyctl/internal/command"
 	"github.com/superfly/flyctl/internal/env"
 	"github.com/superfly/flyctl/internal/flag"
-	"github.com/superfly/flyctl/internal/prompt"
+	"github.com/superfly/flyctl/internal/logger"
 	"github.com/superfly/flyctl/internal/render"
 	"github.com/superfly/flyctl/internal/state"
-
-	"github.com/superfly/flyctl/client"
-	"github.com/superfly/flyctl/internal/cmdutil"
-	"github.com/superfly/flyctl/internal/logger"
-	"github.com/superfly/flyctl/internal/watch"
+	"github.com/superfly/flyctl/iostreams"
 )
 
 var CommonFlags = flag.Set{
@@ -88,90 +84,11 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	return DeployWithConfig(ctx, appConfig)
-}
-
-func DeployWithConfig(ctx context.Context, appConfig *app.Config) (err error) {
-	apiClient := client.FromContext(ctx).API()
-
-	// Fetch an image ref or build from source to get the final image reference to deploy
-	img, err := determineImage(ctx, appConfig)
-	if err != nil {
-		return fmt.Errorf("failed to fetch an image or build from source: %w", err)
-	}
-
-	// Assign an empty map if nil so later assignments won't fail
-	if appConfig.Env == nil {
-		appConfig.Env = map[string]string{}
-	}
-
-	if flag.GetBuildOnly(ctx) {
-		return nil
-	}
-
-	var release *api.Release
-	var releaseCommand *api.ReleaseCommand
-
-	if appConfig.PrimaryRegion != "" && appConfig.Env["PRIMARY_REGION"] == "" {
-		appConfig.Env["PRIMARY_REGION"] = appConfig.PrimaryRegion
-	}
-
 	if appConfig.ForMachines() {
-		if !flag.GetBool(ctx, "auto-confirm") {
-			switch confirmed, err := prompt.Confirmf(ctx, "This feature is highly experimental and may produce unexpected results. Proceed?"); {
-			case err == nil:
-				if !confirmed {
-					return nil
-				}
-			case prompt.IsNonInteractive(err):
-				return prompt.NonInteractiveError("auto-confirm flag must be specified when not running interactively")
-			default:
-				return err
-			}
-		}
-
-		return createMachinesRelease(ctx, appConfig, img, flag.GetString(ctx, "strategy"))
+		return DeployMachinesWithConfig(ctx, appConfig)
 	}
 
-	release, releaseCommand, err = createRelease(ctx, appConfig, img)
-	if err != nil {
-		return err
-	}
-
-	if flag.GetDetach(ctx) {
-		return nil
-	}
-
-	// TODO: This is a single message that doesn't belong to any block output, so we should have helpers to allow that
-	tb := render.NewTextBlock(ctx)
-	tb.Done("You can detach the terminal anytime without stopping the deployment")
-
-	// Run the pre-deployment release command if it's set
-	if releaseCommand != nil {
-		// TODO: don't use text block here
-		tb := render.NewTextBlock(ctx, fmt.Sprintf("Release command detected: %s\n", releaseCommand.Command))
-		tb.Done("This release will not be available until the release command succeeds.")
-
-		if err := watch.ReleaseCommand(ctx, appConfig.AppName, releaseCommand.ID); err != nil {
-			return err
-		}
-
-		release, err = apiClient.GetAppRelease(ctx, appConfig.AppName, release.ID)
-		if err != nil {
-			return err
-		}
-	}
-
-	if release.DeploymentStrategy == "IMMEDIATE" {
-		logger := logger.FromContext(ctx)
-		logger.Debug("immediate deployment strategy, nothing to monitor")
-
-		return nil
-	}
-
-	err = watch.Deployment(ctx, appConfig.AppName, release.EvaluationID)
-
-	return err
+	return DeployNomadWithConfig(ctx, appConfig)
 }
 
 // determineAppConfig fetches the app config from a local file, or in its absence, from the API
