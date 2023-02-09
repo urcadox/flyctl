@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/superfly/flyctl/api"
 	"github.com/superfly/flyctl/client"
 	"github.com/superfly/flyctl/flaps"
 	"github.com/superfly/flyctl/internal/app"
@@ -103,16 +102,6 @@ func runMachineList(ctx context.Context) (err error) {
 				volName = machine.Config.Mounts[0].Volume
 			}
 
-			appPlatform := ""
-
-			if machine.Config != nil {
-				if platformVersion, ok := machine.Config.Metadata[api.MachineConfigMetadataKeyFlyPlatformVersion]; ok {
-					appPlatform = platformVersion
-
-				}
-
-			}
-
 			rows = append(rows, []string{
 				machine.ID,
 				machine.Name,
@@ -123,12 +112,10 @@ func runMachineList(ctx context.Context) (err error) {
 				volName,
 				machine.CreatedAt,
 				machine.UpdatedAt,
-				appPlatform,
 			})
-
 		}
 
-		_ = render.Table(io.Out, appName, rows, "ID", "Name", "State", "Region", "Image", "IP Address", "Volume", "Created", "Last Updated", "App Platform")
+		_ = render.Table(io.Out, appName, rows, "ID", "Name", "State", "Region", "Image", "IP Address", "Volume", "Created", "Last Updated")
 	}
 	return nil
 }
