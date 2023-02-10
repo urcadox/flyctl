@@ -328,10 +328,16 @@ func formatMemory(size api.VMSize) string {
 }
 
 func getDefaultGroupName(cfg *app.Config) string {
-	if cfg != nil && len(cfg.Processes) == 1 {
-		for k := range cfg.Processes {
-			return k
+	// 3 nested ifs, yeah yeah whatever
+	if procsDef, ok := cfg.Definition["processes"]; ok {
+		if procs, ok := procsDef.(map[string]interface{}); ok {
+			if len(procs) == 1 {
+				for k := range procs {
+					return k
+				}
+			}
 		}
 	}
+
 	return "app"
 }

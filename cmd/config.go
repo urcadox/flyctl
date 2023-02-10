@@ -73,12 +73,13 @@ func runSaveConfig(cmdCtx *cmdctx.CmdContext) error {
 		return err
 	}
 
-	appConfig, err := app.FromDefinition(&serverCfg.Definition)
-	if err != nil {
-		return err
+	if cmdCtx.AppConfig == nil {
+		cmdCtx.AppConfig = app.NewConfig()
 	}
-	appConfig.AppName = cmdCtx.AppName
-	cmdCtx.AppConfig = appConfig
+
+	cmdCtx.AppConfig.Definition = serverCfg.Definition
+	cmdCtx.AppConfig.AppName = cmdCtx.AppName
+
 	return writeAppConfig(cmdCtx.ConfigFile, cmdCtx.AppConfig)
 }
 
@@ -92,12 +93,7 @@ func runValidateConfig(commandContext *cmdctx.CmdContext) error {
 	commandContext.Status("config", cmdctx.STITLE, "Validating", commandContext.ConfigFile)
 
 	// separate query from authenticated app validation (in deploy etc)
-	definition, err := commandContext.AppConfig.ToDefinition()
-	if err != nil {
-		return err
-	}
-
-	serverCfg, err := client.NewClient("").ValidateConfig(ctx, commandContext.AppName, *definition)
+	serverCfg, err := client.NewClient("").ValidateConfig(ctx, commandContext.AppName, commandContext.AppConfig.Definition)
 	if err != nil {
 		return err
 	}

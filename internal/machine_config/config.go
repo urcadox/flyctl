@@ -1,6 +1,6 @@
-// Package app implements functionality related to reading and writing app
+// package machine_config implements functionality related to reading and writing app
 // configuration files.
-package app
+package machine_config
 
 import (
 	"github.com/superfly/flyctl/api"
