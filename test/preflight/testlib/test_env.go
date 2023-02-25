@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/require"
+	"github.com/superfly/flyctl/internal/appv2"
 	"github.com/superfly/flyctl/iostreams"
 )
 
@@ -33,6 +35,30 @@ func (f *FlyctlTestEnv) OrgSlug() string {
 
 func (f *FlyctlTestEnv) WorkDir() string {
 	return f.workDir
+}
+
+func (f *FlyctlTestEnv) FlyTomlFilepath() string {
+	return filepath.Join(f.WorkDir(), appv2.DefaultConfigFileName)
+}
+
+func (f *FlyctlTestEnv) FlyTomlContent() string {
+	content, err := os.ReadFile(f.FlyTomlFilepath())
+	if err != nil {
+		f.Fatalf("error trying to read %s after running fly config save: %v", f.FlyTomlFilepath(), err)
+	}
+	return string(content)
+}
+
+func (f *FlyctlTestEnv) AppendToFlyToml(suffix string) {
+	fullConfig := fmt.Sprintf("%s\n%s", f.FlyTomlContent(), suffix)
+	f.WriteToFlyToml(fullConfig)
+}
+
+func (f *FlyctlTestEnv) WriteToFlyToml(content string) {
+	err := os.WriteFile(f.FlyTomlFilepath(), []byte(content), 0644)
+	if err != nil {
+		f.Fatalf("error writing to app config file at %s error: %v", f.FlyTomlFilepath(), err)
+	}
 }
 
 func (f *FlyctlTestEnv) PrimaryRegion() string {

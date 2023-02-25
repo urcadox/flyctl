@@ -200,19 +200,13 @@ func TestAppsV2ConfigSave_OneMachineNoAppConfig(t *testing.T) {
 
 func TestAppsV2ConfigSave_PostgresSingleNode(t *testing.T) {
 	var (
-		err            error
-		f              = testlib.NewTestEnvFromEnv(t)
-		appName        = f.CreateRandomAppName()
-		configFilePath = filepath.Join(f.WorkDir(), appv2.DefaultConfigFileName)
+		f       = testlib.NewTestEnvFromEnv(t)
+		appName = f.CreateRandomAppName()
 	)
 	f.Fly("pg create --org %s --name %s --region %s --initial-cluster-size 1 --vm-size shared-cpu-1x --volume-size 1", f.OrgSlug(), appName, f.PrimaryRegion())
 	f.Fly("status -a %s", appName)
 	f.Fly("config save -a %s", appName)
-	configFileBytes, err := os.ReadFile(configFilePath)
-	if err != nil {
-		f.Fatalf("error trying to read %s after running fly config save: %v", configFilePath, err)
-	}
-	configFileContent := string(configFileBytes)
+	configFileContent := f.FlyTomlContent()
 	require.Contains(f, configFileContent, fmt.Sprintf(`primary_region = "%s"`, f.PrimaryRegion()))
 	require.Contains(f, configFileContent, `[env]`)
 	require.Contains(f, configFileContent, fmt.Sprintf(`PRIMARY_REGION = "%s"`, f.PrimaryRegion()))
@@ -244,19 +238,13 @@ func TestAppsV2ConfigSave_PostgresSingleNode(t *testing.T) {
 
 func TestAppsV2ConfigSave_PostgresHA(t *testing.T) {
 	var (
-		err            error
-		f              = testlib.NewTestEnvFromEnv(t)
-		appName        = f.CreateRandomAppName()
-		configFilePath = filepath.Join(f.WorkDir(), appv2.DefaultConfigFileName)
+		f       = testlib.NewTestEnvFromEnv(t)
+		appName = f.CreateRandomAppName()
 	)
 	f.Fly("pg create --org %s --name %s --region %s --initial-cluster-size 3 --vm-size shared-cpu-1x --volume-size 1", f.OrgSlug(), appName, f.PrimaryRegion())
 	f.Fly("status -a %s", appName)
 	f.Fly("config save -a %s", appName)
-	configFileBytes, err := os.ReadFile(configFilePath)
-	if err != nil {
-		f.Fatalf("error trying to read %s after running fly config save: %v", configFilePath, err)
-	}
-	configFileContent := string(configFileBytes)
+	configFileContent := f.FlyTomlContent()
 	require.Contains(f, configFileContent, fmt.Sprintf(`primary_region = "%s"`, f.PrimaryRegion()))
 	require.Contains(f, configFileContent, fmt.Sprintf(`[env]
   PRIMARY_REGION = "%s"`, f.PrimaryRegion()))
