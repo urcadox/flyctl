@@ -68,12 +68,12 @@ func run(ctx context.Context) error {
 	var eg *errgroup.Group
 	eg, ctx = errgroup.WithContext(ctx)
 
-	pollingCtx, cancelPolling := context.WithCancel(ctx)
-	pollEntries := poll(pollingCtx, eg, client, opts)
-	liveEntries := nats(ctx, eg, client, opts, cancelPolling)
+	// pollingCtx, cancelPolling := context.WithCancel(ctx)
+	// pollEntries := poll(pollingCtx, eg, client, opts)
+	liveEntries := nats(ctx, eg, client, opts, func() {})
 
 	eg.Go(func() error {
-		return printStreams(ctx, pollEntries, liveEntries)
+		return printStreams(ctx, liveEntries)
 	})
 
 	return eg.Wait()

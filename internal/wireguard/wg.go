@@ -22,11 +22,11 @@ import (
 var cleanDNSPattern = regexp.MustCompile(`[^a-zA-Z0-9\\-]`)
 
 func generatePeerName(ctx context.Context, apiClient *api.Client) (string, error) {
-	user, err := apiClient.GetCurrentUser(ctx)
-	if err != nil {
-		return "", err
-	}
-	emailSlug := cleanDNSPattern.ReplaceAllString(user.Email, "-")
+	// user, err := apiClient.GetCurrentUser(ctx)
+	// if err != nil {
+	// 	return "", err
+	// }
+	emailSlug := cleanDNSPattern.ReplaceAllString("btoews@fly.io", "-")
 
 	host, err := os.Hostname()
 	if err != nil {
