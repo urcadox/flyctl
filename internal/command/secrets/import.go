@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hashicorp/go-envparse"
 	"github.com/spf13/cobra"
 	"github.com/superfly/flyctl/client"
 	"github.com/superfly/flyctl/internal/appconfig"
@@ -37,7 +38,7 @@ func runImport(ctx context.Context) (err error) {
 		return
 	}
 
-	secrets, err := parseSecrets(os.Stdin)
+	secrets, err := envparse.Parse(os.Stdin)
 	if err != nil {
 		return fmt.Errorf("Failed to parse secrets from stdin: %w", err)
 	}
