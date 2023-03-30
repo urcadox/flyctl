@@ -47,24 +47,27 @@ func ShowMachineServiceInfo(ctx context.Context, app *api.AppInfo) error {
 
 	services := [][]string{}
 
-	for _, service := range machines[0].Config.Services {
-		for i, port := range service.Ports {
-			protocol := service.Protocol
-			if i > 0 {
-				protocol = ""
+	for _, machine := range machines {
+		for _, service := range machine.Config.Services {
+			for i, port := range service.Ports {
+				protocol := service.Protocol
+				if i > 0 {
+					protocol = ""
+				}
+
+				handlers := []string{}
+				for _, handler := range port.Handlers {
+					handlers = append(handlers, strings.ToUpper(handler))
+				}
+
+				fields := []string{
+					strings.ToUpper(protocol),
+					fmt.Sprintf("%d => %d [%s]", *port.Port, service.InternalPort, strings.Join(handlers, ",")),
+					strings.Title(fmt.Sprint(port.ForceHttps)),
+				}
+				services = append(services, fields)
 			}
 
-			handlers := []string{}
-			for _, handler := range port.Handlers {
-				handlers = append(handlers, strings.ToUpper(handler))
-			}
-
-			fields := []string{
-				strings.ToUpper(protocol),
-				fmt.Sprintf("%d => %d [%s]", *port.Port, service.InternalPort, strings.Join(handlers, ",")),
-				strings.Title(fmt.Sprint(port.ForceHttps)),
-			}
-			services = append(services, fields)
 		}
 
 	}
