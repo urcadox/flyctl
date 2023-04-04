@@ -646,6 +646,21 @@ func (m *v2PlatformMigrator) createMachines(ctx context.Context) error {
 
 	for _, machineInput := range m.newMachinesInput {
 		newMachine, err := m.flapsClient.Launch(ctx, *machineInput)
+		{ // Debug
+			currentMachs, err := m.flapsClient.ListActive(ctx)
+			currentMachsStr := ""
+			if err != nil {
+				currentMachsStr = fmt.Sprintf("failed to get machs: %v\n", err)
+			} else {
+				currentMachsStr = " > " + strings.Join(lo.Map(currentMachs, func(m *api.Machine, _ int) string {
+					return m.ID
+				}), "\n > ") + "\n"
+				if len(currentMachsStr) < 4 {
+					currentMachsStr = " none"
+				}
+			}
+			fmt.Fprintf(m.io.Out, "created %v\ncurrent machines:\n%v", newMachine, currentMachsStr)
+		}
 		if err != nil {
 			// FIXME: release app lock,
 			return fmt.Errorf("failed creating a machine in region %s: %w", machineInput.Region, err)
