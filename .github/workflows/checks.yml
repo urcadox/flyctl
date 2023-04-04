@@ -6,6 +6,22 @@ on:
     branches: [master]
 
 jobs:
+  check-changed-files:
+    runs-on: ubuntu-latest
+     steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v3
+        with:
+          go-version-file: "go.mod"
+    - uses: lots0logs/gh-action-get-changed-files@2.1.4
+      with:
+       token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Checking files
+      run: |
+        echo "job: running script to check changed files:"
+        chmod +x ./.github/workflows/check-changed-files.sh
+        ./.github/workflows/check-changed-files.sh || echo "::error ::contains res.Body.Close(), add //skipcq: GO-S2307 at the end to prevent deepsource errors"
+        echo "job: Done"
   lint:
     runs-on: ubuntu-latest
     steps:
