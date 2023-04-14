@@ -415,6 +415,7 @@ type MachineService struct {
 	Ports        []MachinePort              `json:"ports,omitempty" toml:"ports,omitempty"`
 	Checks       []MachineCheck             `json:"checks,omitempty" toml:"checks,omitempty"`
 	Concurrency  *MachineServiceConcurrency `json:"concurrency,omitempty" toml:"concurrency"`
+	FlyProxy     *MachineFlyProxy           `json:"fly_proxy,omitempty" toml:"fly_proxy,omitempty"`
 }
 
 type MachineServiceConcurrency struct {
@@ -424,8 +425,8 @@ type MachineServiceConcurrency struct {
 }
 
 type MachineFlyProxy struct {
-	AutostartMachine *bool `json:"autostart_machine,omitempty"`
-	AutostopMachine  *bool `json:"autostop_machine,omitempty"`
+	AutostartMachine *bool `json:"autostart_machine,omitempty" toml:"autostart_machine,omitempty"`
+	AutostopMachine  *bool `json:"autostop_machine,omitempty" toml:"autostop_machine,omitempty"`
 }
 
 type MachineConfig struct {
@@ -450,12 +451,13 @@ type MachineConfig struct {
 	Restart     MachineRestart   `json:"restart,omitempty"`
 	Guest       *MachineGuest    `json:"guest,omitempty"`
 	DNS         *DNSConfig       `json:"dns,omitempty"`
-	FlyProxy    *MachineFlyProxy `json:"fly_proxy,omitempty"`
 	Processes   []MachineProcess `json:"processes,omitempty"`
 
 	// Deprecated: use Guest instead
 	VMSize string `json:"size,omitempty"`
-	// Deprecated: use FlyProxy.AutostartMachine instead
+	// Deprecated: use MachineService.FlyProxy instead
+	FlyProxy    *MachineFlyProxy `json:"fly_proxy,omitempty"`
+	// Deprecated: use MachineService.FlyProxy.AutostartMachine instead
 	DisableMachineAutostart *bool `json:"disable_machine_autostart,omitempty"`
 }
 
