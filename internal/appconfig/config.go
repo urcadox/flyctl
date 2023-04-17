@@ -43,6 +43,7 @@ type Config struct {
 	Processes     map[string]string         `toml:"processes,omitempty" json:"processes,omitempty"`
 	Checks        map[string]*ToplevelCheck `toml:"checks,omitempty" json:"checks,omitempty"`
 	Services      []Service                 `toml:"services,omitempty" json:"services,omitempty"`
+	Autoscale     *Autoscale                `toml:"autoscale,omitempty" json:"autoscale,omitempty"`
 
 	// RawDefinition contains fly.toml parsed as-is
 	// If you add any config field that is v2 specific, be sure to remove it in SanitizeDefinition()
@@ -76,6 +77,10 @@ type Mount struct {
 	Source      string   `toml:"source,omitempty" json:"source,omitempty"`
 	Destination string   `toml:"destination" json:"destination,omitempty"`
 	Processes   []string `json:"processes,omitempty" toml:"processes,omitempty"`
+}
+
+type Autoscale struct {
+	Enable bool `toml:"enable,omitempty" json:"enable,omitempty"`
 }
 
 type Build struct {

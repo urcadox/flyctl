@@ -82,6 +82,20 @@ func (c *Config) updateMachineConfig(src *api.MachineConfig) (*api.MachineConfig
 		})
 	}
 
+	// Autoscaling
+	if c.Autoscale != nil {
+		fp := api.MachineFlyProxy{
+			AutostartMachine: api.Pointer(true),
+			AutostopMachine:  api.Pointer(false),
+		}
+
+		if c.Autoscale.Enable {
+			fp.AutostopMachine = api.Pointer(true)
+		}
+
+		mConfig.FlyProxy = &fp
+	}
+
 	// Checks
 	mConfig.Checks = nil
 	if len(c.Checks) > 0 {
