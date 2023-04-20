@@ -41,6 +41,7 @@ type Config struct {
 	Build        *Build            `toml:"build,omitempty" json:"build,omitempty"`
 	Deploy       *Deploy           `toml:"deploy, omitempty" json:"deploy,omitempty"`
 	Env          map[string]string `toml:"env,omitempty" json:"env,omitempty"`
+	Commands     map[string]string `toml:"commands,omitempty" json:"commands,omitempty"`
 
 	// Fields that are process group aware must come after Processes
 	Processes   map[string]string         `toml:"processes,omitempty" json:"processes,omitempty"`

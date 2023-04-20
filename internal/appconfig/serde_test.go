@@ -366,6 +366,10 @@ func TestLoadTOMLAppConfigReferenceFormat(t *testing.T) {
 			"FOO": "BAR",
 		},
 
+		Commands: map[string]string{
+			"console": "/path/to/bin console",
+		},
+
 		Metrics: &api.MachineMetrics{
 			Port: 9999,
 			Path: "/metrics",

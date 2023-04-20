@@ -2,6 +2,7 @@ app = "foo"
 kill_signal = "SIGTERM"
 kill_timeout = 3
 primary_region = "sea"
+console_command = "/bin/bash"
 
 [experimental]
   cmd = ["cmd"]
@@ -35,6 +36,9 @@ primary_region = "sea"
 
 [env]
   FOO = "BAR"
+
+[commands]
+  console = "/path/to/bin console"
 
 [metrics]
   port = 9999

@@ -230,6 +230,9 @@ func TestToDefinition(t *testing.T) {
 		"env": map[string]any{
 			"FOO": "BAR",
 		},
+		"commands": map[string]any{
+			"console": "/path/to/bin console",
+		},
 		"metrics": map[string]any{
 			"port": int64(9999),
 			"path": "/metrics",
