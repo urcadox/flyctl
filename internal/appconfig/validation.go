@@ -95,6 +95,7 @@ func (cfg *Config) ValidateForMachinesPlatform(ctx context.Context) (err error, 
 		cfg.validateServicesSection,
 		cfg.validateProcessesSection,
 		cfg.validateMachineConversion,
+		cfg.validateCommands,
 	}
 
 	for _, vFunc := range validators {
@@ -214,6 +215,20 @@ func (cfg *Config) validateMachineConversion() (extraInfo string, err error) {
 	for _, name := range cfg.ProcessNames() {
 		if _, vErr := cfg.ToMachineConfig(name, nil); err != nil {
 			extraInfo += fmt.Sprintf("Converting to machine in process group '%s' will fail because of: %s", name, vErr)
+			err = ValidationError
+		}
+	}
+	return
+}
+
+func (cfg *Config) validateCommands() (extraInfo string, err error) {
+	for name, cmd := range cfg.Commands {
+		split, vErr := shlex.Split(cmd)
+		if vErr != nil {
+			extraInfo += fmt.Sprintf("Can't shell split command '%s': '%s'\n", name, cmd)
+			err = ValidationError
+		} else if len(split) == 0 {
+			extraInfo += fmt.Sprintf("Command '%s' is empty\n", name)
 			err = ValidationError
 		}
 	}
