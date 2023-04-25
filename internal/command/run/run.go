@@ -28,7 +28,7 @@ func New() *cobra.Command {
 		short = "Run a command in a new or existing machine"
 		long  = `Run a command in a new or existing machine. A new machine is created by
 default using the app's most recently deployed image. An existing
-machine can be used instead with -m/--machine.
+machine can be used instead with --machine.
 
 If the command name matches an alias in the [commands] section of
 fly.toml, the full command is substituted and any additional arguments
@@ -43,7 +43,6 @@ are appended. Otherwise, the command and arguments are run as-is.`
 		flag.AppConfig(),
 		flag.String{
 			Name:        "machine",
-			Shorthand:   "m",
 			Description: "ID of the machine to connect to",
 		},
 		flag.Bool{
@@ -207,7 +206,7 @@ func selectMachine(ctx context.Context, app *api.AppCompact, appConfig *appconfi
 
 func promptForMachine(ctx context.Context, app *api.AppCompact, appConfig *appconfig.Config) (*api.Machine, bool, error) {
 	if flag.IsSpecified(ctx, "machine") {
-		return nil, false, errors.New("-m/--machine can't be used with -s/--select")
+		return nil, false, errors.New("--machine can't be used with -s/--select")
 	}
 
 	flapsClient := flaps.FromContext(ctx)
