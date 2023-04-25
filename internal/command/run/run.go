@@ -43,7 +43,7 @@ are appended. Otherwise, the command and arguments are run as-is.`
 		flag.AppConfig(),
 		flag.String{
 			Name:        "machine",
-			Description: "ID of the machine to connect to",
+			Description: "Run the command in the existing machine with the specified ID",
 		},
 		flag.Bool{
 			Name:        "select",
